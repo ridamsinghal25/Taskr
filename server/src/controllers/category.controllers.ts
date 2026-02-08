@@ -1,0 +1,78 @@
+import type { Request, Response } from "express";
+import { CategoryService } from "../services/category.services.js";
+import { ApiResponse } from "../lib/ApiResponse.js";
+import { BadRequestException, UnauthorizedException } from "../lib/appError.js";
+
+const categoryService = new CategoryService();
+
+
+function requireUserId(req: Request): string {
+  const userId = (req as any)?.user?.id;
+
+  if (!userId) throw new UnauthorizedException("User not found");
+  
+  return userId;
+}
+
+export class CategoryController {
+  static async createCategory(req: Request, res: Response) {
+
+    const userId = requireUserId(req);
+    const { name } = req.body;
+
+    if (!name) {
+        throw new BadRequestException("name is required");
+    }
+
+    const category = await categoryService.createCategory(name, userId);
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, category, "Category created successfully"));
+  }
+
+  static async updateCategory(req: Request, res: Response) {
+    const { categoryId } = req.params as { categoryId: string };
+    const { name } = req.body;
+    const userId = requireUserId(req);
+
+    if (!categoryId){
+        throw new BadRequestException("categoryId is required");
+    }
+
+    if (!name) {
+        throw new BadRequestException("Category name is required");
+    }
+
+    const updated = await categoryService.updateCategory(categoryId, name, userId);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updated, "Category updated"));
+  }
+
+  static async deleteCategories(req: Request, res: Response) {
+    const userId = requireUserId(req);
+    const { categoryIds } = req.body;
+
+    if (!categoryIds) {
+        throw new BadRequestException("Category IDs are required");
+    }
+
+    const result = await categoryService.deleteCategory(categoryIds, userId);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, result, "Categories deleted"));
+  }
+
+  static async getCategories(req: Request, res: Response) {
+    const userId = requireUserId(req);
+
+    const categories = await categoryService.getCategories(userId);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, categories, "Categories fetched"));
+  }
+}
