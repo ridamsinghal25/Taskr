@@ -11,7 +11,16 @@ categoryRouter
     .route("/")
     .post(asyncHandler(CategoryController.createCategory))
     .get(asyncHandler(CategoryController.getCategories))
-    .delete(asyncHandler(CategoryController.deleteCategories));
+    .delete(asyncHandler(CategoryController.deleteCategories))
+
+categoryRouter.route("/by-ids")
+    .post(asyncHandler(CategoryController.getCategoriesById));
+
+categoryRouter.route("/:categoryName/update-category")
+    .patch(asyncHandler(CategoryController.updateCategoryByName));
+
+categoryRouter.route("/delete-categories-by-name")
+    .delete(asyncHandler(CategoryController.deleteCategoriesByName));
 
 categoryRouter.route("/:categoryId")
     .patch(asyncHandler(CategoryController.updateCategory))

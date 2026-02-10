@@ -75,4 +75,57 @@ export class CategoryController {
       .status(200)
       .json(new ApiResponse(200, categories, "Categories fetched"));
   }
+
+  static async getCategoriesById(req: Request, res: Response) {
+    const { categoryIds } = req.body
+
+    if (!Array.isArray(categoryIds) || categoryIds.length === 0) {
+      throw new BadRequestException("categoryIds are required");
+    }
+
+    const categories = await categoryService.getCategoriesById(categoryIds);
+  
+    return res
+      .status(200)
+      .json(new ApiResponse(200, categories, "Categories fetched succesfully"));
+  }
+
+  static async updateCategoryByName(req: Request, res: Response) {
+    const { categoryName } = req.params as { categoryName: string };
+    const { name } = req.body;
+    const userId = requireUserId(req);
+
+    if (!categoryName) {
+      throw new BadRequestException("category name is required");
+    }
+
+    if (!name) {
+      throw new BadRequestException("Category name is required");
+    }
+
+    const updated = await categoryService.updateCategoryByName(categoryName, name, userId);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updated, "Category updated successfully"));
+  }
+
+  static async deleteCategoriesByName(req: Request, res: Response) {
+    const { categories } = req.body as { categories: string[] };
+    const userId = requireUserId(req);
+
+    if (!categories) {
+      throw new BadRequestException("category names are required");
+    }
+
+    if (!Array.isArray(categories) || categories.length === 0) {
+      throw new BadRequestException("category names must be a non-empty array");
+    }
+
+    const result = await categoryService.deleteCategoriesByName(categories, userId);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, result, "Categories deleted successfully"));
+  }
 }
