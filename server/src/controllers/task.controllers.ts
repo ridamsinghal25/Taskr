@@ -33,6 +33,37 @@ export class TaskController {
     .json(new ApiResponse(201, task, "Task created successfully"));
   }
 
+  static async createTaskByCategoryName(req: Request, res: Response) {
+    const { name, type, status } = req.body;
+    const { categoryName } = req.params as { categoryName: string };
+
+    if (!req.user || !req.user.id){ 
+        throw new BadRequestException("User not found");
+    }
+
+    if (!categoryName){ 
+        throw new BadRequestException("Category name is required");
+    }
+    
+    if (!name){ 
+        throw new BadRequestException("Task name is required");
+    }
+
+    if (!type){ 
+        throw new BadRequestException("Task type is required");
+    }
+    
+    if (!status){ 
+        throw new BadRequestException("Task status is required");
+    }
+
+    const task = await taskService.createTaskByCategoryName(categoryName, name, type, status, req.user.id);
+
+    return res
+    .status(201)
+    .json(new ApiResponse(201, task, "Task created successfully"));
+  }
+
   static async updateTask(req: Request, res: Response) {
     const { categoryId } = req.query as { categoryId: string };
     const { taskId } = req.params as { taskId: string };
@@ -65,6 +96,33 @@ export class TaskController {
     }
 
     const moved = await taskService.moveTaskToCategory(taskId, categoryId);
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, moved, "Task moved successfully"));
+  }
+
+  static async moveTaskToCategoryByName(req: Request, res: Response) {
+    const { categoryName, taskName } = req.params as { categoryName: string, taskName: string };
+    const {newCategoryName} = req.body as {newCategoryName: string};
+    
+    if (!req.user || !req.user.id){ 
+        throw new BadRequestException("User not found");
+    }
+
+    if (!categoryName){ 
+        throw new BadRequestException("category name is required");
+    }
+    
+    if (!taskName){ 
+        throw new BadRequestException("task name is required");
+    }
+
+    if (!newCategoryName){ 
+        throw new BadRequestException("new category name is required");
+    }
+
+    const moved = await taskService.moveTaskToCategoryByName(categoryName, taskName, newCategoryName, req.user.id);
 
     return res
     .status(200)
@@ -116,5 +174,95 @@ export class TaskController {
     return res
     .status(200)
     .json(new ApiResponse(200, task, "Task fetched successfully"));
+  }
+
+  static async deleteTasksByName(req: Request, res: Response) {
+    const { tasks } = req.body as { tasks: string[] };
+    const {categoryName} = req.params as {categoryName: string};
+
+    if (!req.user || !req.user.id){ 
+        throw new BadRequestException("User not found");
+    }
+
+    if (!tasks){ 
+        throw new BadRequestException("task names are required");
+    }
+
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+        throw new BadRequestException("task names must be a non-empty array");
+    }
+
+    if (!categoryName){ 
+        throw new BadRequestException("category name is required");
+    }
+
+    const result = await taskService.deleteTaskByName(tasks, categoryName, req.user.id);
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, result, "Tasks deleted successfully"));
+  }
+
+  static async getTasksByCategoryName(req: Request, res: Response) {
+    const { categoryName } = req.params as { categoryName: string };
+
+    if (!req.user || !req.user.id){ 
+        throw new BadRequestException("User not found");
+    }
+
+    if (!categoryName){ 
+        throw new BadRequestException("category name is required");
+    }
+
+    const tasks = await taskService.getTasksByCategoryName(categoryName, req.user.id);
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, tasks, "Tasks fetched successfully"));
+  }
+
+  static async getTaskByName(req: Request, res: Response) {
+    const { taskName, categoryName } = req.params as { taskName: string, categoryName: string };
+
+    if (!req.user || !req.user.id){ 
+        throw new BadRequestException("User not found");
+    }
+
+    if (!taskName){ 
+        throw new BadRequestException("task name is required");
+    }
+
+    if (!categoryName){ 
+        throw new BadRequestException("category name is required");
+    }
+
+    const task = await taskService.getTaskByName(taskName, categoryName, req.user.id);
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, task, "Task fetched successfully"));
+  }
+
+  static async updateTaskByName(req: Request, res: Response) {
+    const { taskName, categoryName } = req.params as { taskName: string, categoryName: string };
+    const task = req.body;
+
+    if (!req.user || !req.user.id){ 
+        throw new BadRequestException("User not found");
+    }
+
+    if (!taskName){ 
+        throw new BadRequestException("task name is required");
+    }
+
+    if (!categoryName){ 
+        throw new BadRequestException("category name is required");
+    }
+
+    const updated = await taskService.updateTaskByName(taskName, categoryName, req.user.id, task);
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, updated, "Task updated successfully"));
   }
 }
