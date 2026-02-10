@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { BadRequestException, UnauthorizedException } from "../lib/appError.js";
 import prisma from "../db/db.js";
+import { User } from "@prisma/client";
 
 export const verifyToken = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -21,6 +22,10 @@ export const verifyToken = asyncHandler(async (req: Request, res: Response, next
       throw new UnauthorizedException("User is not authenticated");
     }
 
+    if (session.expiresAt < new Date()) {
+      throw new UnauthorizedException("Your session has expired. Please log in again.");
+    }
+
     const user = await prisma.user.findUnique({
       where: {
         id: session.userId,
@@ -31,7 +36,7 @@ export const verifyToken = asyncHandler(async (req: Request, res: Response, next
       throw new BadRequestException("User not found");
     }
 
-    req.user = user;
+    req.user = user as User;
     next();
     } catch (error) {
         if (error instanceof Error) {

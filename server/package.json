@@ -25,9 +25,11 @@
     "inquirer": "^12.10.0",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.0",
+    "morgan": "^1.10.1",
     "node-fetch": "^3.3.2",
     "ora": "^9.0.0",
     "prisma": "^6.18.0",
+    "winston": "^3.19.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {

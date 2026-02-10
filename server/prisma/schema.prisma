@@ -103,7 +103,7 @@ model DeviceCode {
 
 model Category {
   id        String   @id @default(uuid())
-  name      String   @unique
+  name      String   
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -111,6 +111,7 @@ model Category {
   task      Task[]
 
   @@index([name])
+  @@unique([name, userId])
 }
 
 model Task {
@@ -126,4 +127,5 @@ model Task {
   updatedAt DateTime @updatedAt
 
   @@index([categoryId])
+  @@unique([name, categoryId])
 }
