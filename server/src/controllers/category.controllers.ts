@@ -89,6 +89,22 @@ export class CategoryController {
       .status(200)
       .json(new ApiResponse(200, categories, "Categories fetched succesfully"));
   }
+  
+  static async getCategoriesByName(req: Request, res: Response) {
+    const { categoryNames } = req.body as { categoryNames: string[] };
+
+    const userId = requireUserId(req);
+
+    if (!Array.isArray(categoryNames) || categoryNames.length === 0) {
+      throw new BadRequestException("categoryNames are required");
+    }
+
+    const categories = await categoryService.getCategoriesByName(categoryNames, userId);
+  
+    return res
+      .status(200)
+      .json(new ApiResponse(200, categories, "Categories fetched succesfully"));
+  }
 
   static async updateCategoryByName(req: Request, res: Response) {
     const { categoryName } = req.params as { categoryName: string };

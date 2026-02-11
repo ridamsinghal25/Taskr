@@ -139,6 +139,25 @@ export class CategoryService {
     return categories;
   }
 
+  async getCategoriesByName(categoryNames: string[], userId: string) {
+    const categories = await prisma.category.findMany({
+      where: {
+        name: { in: categoryNames },
+        userId,
+      },
+      select: {
+        name: true,
+      }
+    });
+
+    if (!categories.length) {
+      throw new BadRequestException(`${categories.length > 1 ? "Categories" : "Category"} not found`);
+    }
+
+    return categories;
+  }
+
+
   async updateCategoryByName(
     categoryName: string,
     newName: string,
@@ -162,7 +181,7 @@ export class CategoryService {
 
     if (!existingCategory) {
       throw new BadRequestException(
-        `Category ${categoryName} not found`,
+        `Category ${categoryName} not found for this user`,
       );
     }
 
