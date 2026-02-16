@@ -5,44 +5,36 @@ import prisma from "../db/db.js";
 import { User } from "@prisma/client";
 
 export const verifyToken = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const sessionToken = req.header("Authorization")?.replace("Bearer ", "");
+  const sessionToken = req.header("Authorization")?.replace("Bearer ", "");
 
-    if (!sessionToken) {
-      throw new UnauthorizedException("Unauthorized");
-    }
-
-    const session = await prisma.session.findUnique({
-      where: {
-        token: sessionToken,
-      },
-    });
-
-    if (!session) {
-      throw new UnauthorizedException("User is not authenticated");
-    }
-
-    if (session.expiresAt < new Date()) {
-      throw new UnauthorizedException("Your session has expired. Please log in again.");
-    }
-
-    const user = await prisma.user.findUnique({
-      where: {
-        id: session.userId,
-      },
-    });
-
-    if (!user) {
-      throw new BadRequestException("User not found");
-    }
-
-    req.user = user as User;
-    next();
-    } catch (error) {
-        if (error instanceof Error) {
-          throw new BadRequestException(error.message);
-        }
-        throw new BadRequestException("Invalid token");
-    }
+  if (!sessionToken) {
+    throw new UnauthorizedException("Unauthorized");
   }
-);
+
+  const session = await prisma.session.findUnique({
+    where: {
+      token: sessionToken,
+    },
+  });
+
+  if (!session) {
+    throw new UnauthorizedException("User is not authenticated");
+  }
+
+  if (session.expiresAt < new Date()) {
+    throw new UnauthorizedException("Your session has expired. Please log in again.");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: session.userId,
+    },
+  });
+
+  if (!user) {
+    throw new BadRequestException("User not found");
+  }
+
+  req.user = user as User;
+  next();
+});

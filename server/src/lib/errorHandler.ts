@@ -23,8 +23,24 @@ export function prismaErrorHandler(err: unknown): AppError | null {
 
   // 🔴 Database connection / startup errors
   if (err instanceof Prisma.PrismaClientInitializationError) {
+    if ((err as any).errorCode === PrismaErrorCode.DB_UNREACHABLE) {
+      return new AppError(
+        "Database unreachable. Please check your database connection and try again.",
+        HTTPSTATUS.SERVICE_UNAVAILABLE,
+        ErrorCodeEnum.INTERNAL_SERVER_ERROR
+      );
+    }
+
+    if ((err as any).errorCode === PrismaErrorCode.TLS_ERROR) {
+      return new AppError(
+        "Secure connection failed. TLS/SSL configuration error.",
+        HTTPSTATUS.SERVICE_UNAVAILABLE,
+        ErrorCodeEnum.INTERNAL_SERVER_ERROR
+      );
+    }
+
     return new AppError(
-      "Database connection failed. Please check your DATABASE_URL or try again later.",
+      "Database connection failed. Please try again later.",
       HTTPSTATUS.SERVICE_UNAVAILABLE,
       ErrorCodeEnum.INTERNAL_SERVER_ERROR
     );
