@@ -36,12 +36,12 @@ export function LoginForm() {
 
   const onLogin = async () => {
     setIsLoading(true);
-    console.log("hello world");
-    return;
-    await authClient.signIn.social({
+
+    const data = await authClient.signIn.social({
       provider: "github",
       callbackURL: "http://localhost:3000",
     });
+    console.log("data: ", data);
     setIsLoading(false);
   };
 

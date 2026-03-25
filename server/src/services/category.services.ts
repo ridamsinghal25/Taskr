@@ -239,4 +239,55 @@ export class CategoryService {
       },
     });
   }
+
+  async getCategoryItems(categoryId: string, userId: string) {
+    const category = await prisma.category.findUnique({
+      where: {
+        id: categoryId,
+        userId,
+      },
+    });
+
+    if (!category) {
+      throw new BadRequestException(
+        `Category not found`,
+      );
+    }
+
+    const [tasks, notes] = await Promise.all([
+      prisma.task.findMany({
+        where: {
+          categoryId: category.id,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      }),
+      prisma.note.findMany({
+        where: {
+          categoryId: category.id,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      }),
+    ]);
+
+    const items = [
+      ...tasks.map((task) => ({
+        itemType: "task" as const,
+        ...task,
+      })),
+      ...notes.map((note) => ({
+        itemType: "note" as const,
+        ...note,
+      })),
+    ].sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateA - dateB;
+    });
+
+    return items;
+  }
 }

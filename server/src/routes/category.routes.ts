@@ -22,6 +22,9 @@ categoryRouter.route("/bulk-get-by-name")
 categoryRouter.route("/:categoryName/update-category")
     .patch(asyncHandler(CategoryController.updateCategoryByName));
 
+categoryRouter.route("/:categoryId/get-items")
+    .get(asyncHandler(CategoryController.getCategoryItems));
+
 categoryRouter.route("/delete-categories-by-name")
     .delete(asyncHandler(CategoryController.deleteCategoriesByName));
 

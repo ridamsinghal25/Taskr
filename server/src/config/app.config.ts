@@ -10,6 +10,7 @@ const appConfig = () => ({
   GITHUB_CLIENT_SECRET: getEnv("GITHUB_CLIENT_SECRET", ""),
 
   FRONTEND_ORIGIN: getEnv("FRONTEND_ORIGIN", "localhost"),
+  CHROME_ORIGIN: getEnv("CHROME_ORIGIN"),
 });
 
 export const config = appConfig();

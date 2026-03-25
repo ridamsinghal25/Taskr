@@ -8,7 +8,7 @@ export const verifyToken = asyncHandler(async (req: Request, res: Response, next
   const sessionToken = req.header("Authorization")?.replace("Bearer ", "");
 
   if (!sessionToken) {
-    throw new UnauthorizedException("Unauthorized");
+    throw new UnauthorizedException("Unauthorized access");
   }
 
   const session = await prisma.session.findUnique({

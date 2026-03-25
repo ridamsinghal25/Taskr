@@ -144,4 +144,19 @@ export class CategoryController {
       .status(200)
       .json(new ApiResponse(200, result, "Categories deleted successfully"));
   }
+
+  static async getCategoryItems(req: Request, res: Response) {
+    const { categoryId } = req.params as { categoryId: string };
+    const userId = requireUserId(req);
+
+    if (!categoryId) {
+      throw new BadRequestException("category id is required");
+    }
+
+    const items = await categoryService.getCategoryItems(categoryId, userId);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, items, "Category items fetched successfully"));
+  }
 }

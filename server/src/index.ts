@@ -8,6 +8,7 @@ import categoryRouter from "./routes/category.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import { config } from "./config/app.config.js";
 import userRouter from "./routes/user.routes.js";
+import noteRouter from "./routes/note.routes.js";
 import { errorHandler } from "./middlewares/error.middlewares.js";
 import morganMiddleware from "./logger/morgan.logger.js";
 
@@ -21,10 +22,10 @@ const port = 3005;
 
 app.use(
   cors({
-    origin: [config.FRONTEND_ORIGIN],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: [config.FRONTEND_ORIGIN, config.CHROME_ORIGIN],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
-  })
+  }),
 );
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
@@ -38,6 +39,7 @@ app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("", authRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/notes", noteRouter);
 
 app.use(errorHandler);
 

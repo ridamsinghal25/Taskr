@@ -17,6 +17,8 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
     let appError = error as AppError;
 
     const statusCode = appError.statusCode || HTTPSTATUS.INTERNAL_SERVER_ERROR;
+    console.log(statusCode);
+    console.log(appError)
 
     const message = appError.message || "Something went wrong";
     error = new AppError(message, statusCode, appError.errorCode);
