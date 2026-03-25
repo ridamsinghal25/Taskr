@@ -9,6 +9,7 @@ import authRouter from "./routes/auth.routes.js";
 import { config } from "./config/app.config.js";
 import userRouter from "./routes/user.routes.js";
 import noteRouter from "./routes/note.routes.js";
+import healthRouter from "./routes/health.routes.js";
 import { errorHandler } from "./middlewares/error.middlewares.js";
 import morganMiddleware from "./logger/morgan.logger.js";
 
@@ -35,6 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(morganMiddleware);
 
+app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("", authRouter);
