@@ -5,8 +5,8 @@ export const noteSchema = zod.object({
     .string("Title is required")
     .trim()
     .regex(
-      /^[a-zA-Z\s_-]+$/,
-      "Note title must only contain letters, underscores and hyphens and spaces",
+      /^[a-zA-Z0-9\s_\-()\[\]{}&.,'":!?/@#%$§]+$/,
+      "Note title contains invalid characters",
     )
     .min(1, "Note title cannot be empty")
     .max(50, "Note title must be at most 50 characters long")
