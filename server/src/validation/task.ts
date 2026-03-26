@@ -7,7 +7,7 @@ export const taskSchema = zod.object({
     .trim()
     .regex(/^[a-zA-Z0-9\s_\-()\[\]{}&.,'":!?/@#%$§]+$/, "Task name contains invalid characters")
     .min(4, "Task name must be at least 4 characters long")
-    .max(100, "Task name must be at most 50 characters long")
+    .max(500, "Task name must be at most 500 characters long")
     .optional()
     .default(""),
   type: zod
