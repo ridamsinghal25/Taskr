@@ -1,8 +1,55 @@
+import { Prisma, Task, TaskStatus, TaskType } from "@prisma/client";
 import prisma from "../db/db.js";
+import { config } from "../config/app.config.js";
+import { imageKitClient } from "../lib/imagekit.js";
 import { extractMessagesFromFlatten } from "../lib/zodError.js";
 import { BadRequestException } from "../lib/appError.js";
-import { Task, TaskStatus, TaskType } from "@prisma/client";
-import { taskSchema } from "../validation/task.js";
+import { taskAttachmentsSchema, taskSchema } from "../validation/task.js";
+
+const IMAGEKIT_BULK_DELETE_LIMIT = 100;
+
+function collectAttachmentFileIdsFromJson(attachments: unknown): string[] {
+  if (!Array.isArray(attachments)) {
+    return [];
+  }
+  const ids = new Set<string>();
+  for (const item of attachments) {
+    if (
+      item &&
+      typeof item === "object" &&
+      "fileId" in item &&
+      typeof (item as { fileId: unknown }).fileId === "string"
+    ) {
+      const id = (item as { fileId: string }).fileId.trim();
+      if (id) {
+        ids.add(id);
+      }
+    }
+  }
+  return [...ids];
+}
+
+async function deleteImageKitFilesByIds(fileIds: string[]): Promise<void> {
+  if (fileIds.length === 0 || !config.IMAGEKIT_PRIVATE_KEY) {
+    return;
+  }
+  for (let i = 0; i < fileIds.length; i += IMAGEKIT_BULK_DELETE_LIMIT) {
+    const chunk = fileIds.slice(i, i + IMAGEKIT_BULK_DELETE_LIMIT);
+    await imageKitClient.files.bulk.delete({ fileIds: chunk });
+  }
+}
+
+function attachmentsAsArray(raw: unknown): { url: string; fileId: string }[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return [];
+  }
+  const parsed = taskAttachmentsSchema.safeParse(raw);
+  return parsed.success ? parsed.data : [];
+}
+
+export type TaskPayload = Pick<Task, "name" | "type" | "status"> & {
+  attachments?: { url: string; fileId: string }[];
+};
 
 export class TaskService {
   async createTask(
@@ -10,8 +57,14 @@ export class TaskService {
     type: TaskType,
     status: TaskStatus,
     categoryId: string,
+    attachments?: { url: string; fileId: string }[],
   ) {
-    const result = taskSchema.safeParse({ name, type, status });
+    const result = taskSchema.safeParse({
+      name,
+      type,
+      status,
+      attachments: attachments ?? [],
+    });
 
     if (!result.success) {
       let errorMessage = extractMessagesFromFlatten(result.error);
@@ -47,12 +100,28 @@ export class TaskService {
         type,
         status,
         categoryId,
+        attachments:
+          result.data.attachments.length > 0
+            ? (result.data.attachments as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
       },
     });
   }
 
-  async createTaskByCategoryName(categoryName: string, name: string, type: TaskType, status: TaskStatus, userId: string) {
-    const result = taskSchema.safeParse({ name, type, status });
+  async createTaskByCategoryName(
+    categoryName: string,
+    name: string,
+    type: TaskType,
+    status: TaskStatus,
+    userId: string,
+    attachments?: { url: string; fileId: string }[],
+  ) {
+    const result = taskSchema.safeParse({
+      name,
+      type,
+      status,
+      attachments: attachments ?? [],
+    });
 
     if (!result.success) {
       let errorMessage = extractMessagesFromFlatten(result.error);
@@ -91,22 +160,15 @@ export class TaskService {
         type,
         status,
         categoryId: isCategoryExists.id,
+        attachments:
+          result.data.attachments.length > 0
+            ? (result.data.attachments as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
       },
     });
   }
 
-  async updateTask(taskId: string, task: Pick<Task, "name" | "type" | "status">, categoryId: string) {
-    const result = taskSchema.safeParse({
-      name: task.name,
-      type: task.type,
-      status: task.status,
-    });
-
-    if (!result.success) {
-      let errorMessage = extractMessagesFromFlatten(result.error);
-      throw new BadRequestException(errorMessage);
-    }
-
+  async updateTask(taskId: string, task: TaskPayload, categoryId: string) {
     const isTaskExists = await prisma.task.findUnique({
       where: {
         id: taskId,
@@ -115,6 +177,23 @@ export class TaskService {
 
     if (!isTaskExists) {
       throw new BadRequestException("Task not found");
+    }
+
+    const attachmentsForParse =
+      task.attachments !== undefined
+        ? task.attachments
+        : attachmentsAsArray(isTaskExists.attachments);
+
+    const result = taskSchema.safeParse({
+      name: task.name ?? isTaskExists.name,
+      type: task.type ?? isTaskExists.type,
+      status: task.status ?? isTaskExists.status,
+      attachments: attachmentsForParse,
+    });
+
+    if (!result.success) {
+      let errorMessage = extractMessagesFromFlatten(result.error);
+      throw new BadRequestException(errorMessage);
     }
 
     const isCategoryExists = await prisma.category.findUnique({
@@ -158,27 +237,24 @@ export class TaskService {
         name: task.name ?? isTaskExists.name,
         type: task.type ?? isTaskExists.type,
         status: task.status ?? isTaskExists.status,
+        ...(task.attachments !== undefined
+          ? {
+              attachments:
+                task.attachments.length > 0
+                  ? (task.attachments as Prisma.InputJsonValue)
+                  : Prisma.JsonNull,
+            }
+          : {}),
       },
     });
   }
 
   async updateTaskByName(
-  taskName: string,
-  categoryName: string,
-  userId: string,
-  task: Pick<Task, "name" | "type" | "status">,
+    taskName: string,
+    categoryName: string,
+    userId: string,
+    task: TaskPayload,
   ) {
-    const result = taskSchema.safeParse({
-      name: task.name,
-      type: task.type,
-      status: task.status,
-    });
-
-    if (!result.success) {
-      const errorMessage = extractMessagesFromFlatten(result.error);
-      throw new BadRequestException(errorMessage);
-    }
-
     const category = await prisma.category.findUnique({
       where: {
         name_userId: {
@@ -211,7 +287,24 @@ export class TaskService {
       );
     }
 
+    const attachmentsForParse =
+      task.attachments !== undefined
+        ? task.attachments
+        : attachmentsAsArray(existingTask.attachments);
+
     const newName = task.name ?? existingTask.name;
+
+    const result = taskSchema.safeParse({
+      name: newName,
+      type: task.type ?? existingTask.type,
+      status: task.status ?? existingTask.status,
+      attachments: attachmentsForParse,
+    });
+
+    if (!result.success) {
+      const errorMessage = extractMessagesFromFlatten(result.error);
+      throw new BadRequestException(errorMessage);
+    }
 
     const duplicateTask = await prisma.task.findFirst({
       where: {
@@ -237,6 +330,14 @@ export class TaskService {
         name: newName,
         type: task.type ?? existingTask.type,
         status: task.status ?? existingTask.status,
+        ...(task.attachments !== undefined
+          ? {
+              attachments:
+                task.attachments.length > 0
+                  ? (task.attachments as Prisma.InputJsonValue)
+                  : Prisma.JsonNull,
+            }
+          : {}),
       },
     });
   }
@@ -342,7 +443,7 @@ export class TaskService {
         },
         categoryId: categoryId,
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, attachments: true },
     });
 
     const foundIds = new Set(isTasksExists.map((t) => t.id));
@@ -353,6 +454,11 @@ export class TaskService {
         `Some tasks were not found in category ${isCategoryExists.name}`,
       );
     }
+
+    const fileIds = isTasksExists.flatMap((t) =>
+      collectAttachmentFileIdsFromJson(t.attachments),
+    );
+    await deleteImageKitFilesByIds(fileIds);
 
     return await prisma.task.deleteMany({
       where: {
@@ -386,7 +492,7 @@ export class TaskService {
         },
         categoryId: category.id,
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, attachments: true },
     });
 
     const foundNames = new Set(tasks.map((t) => t.name));
@@ -397,6 +503,11 @@ export class TaskService {
         `Tasks with names ${missingNames.join(", ")} were not found in category ${categoryName}`,
       );
     }
+
+    const fileIds = tasks.flatMap((t) =>
+      collectAttachmentFileIdsFromJson(t.attachments),
+    );
+    await deleteImageKitFilesByIds(fileIds);
 
     return await prisma.task.deleteMany({
       where: {

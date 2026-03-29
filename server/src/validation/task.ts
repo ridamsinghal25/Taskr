@@ -1,6 +1,15 @@
 import { TaskStatus, TaskType } from "@prisma/client";
 import zod from "zod";
 
+export const taskAttachmentSchema = zod.object({
+  url: zod.url({
+    message: "Attachment url must be a valid URL",
+  }),
+  fileId: zod.string().min(1, "Attachment fileId is required"),
+});
+
+export const taskAttachmentsSchema = zod.array(taskAttachmentSchema);
+
 export const taskSchema = zod.object({
   name: zod
     .string("Name is required")
@@ -18,4 +27,5 @@ export const taskSchema = zod.object({
   .enum([TaskStatus.pending, TaskStatus.in_progress, TaskStatus.done, TaskStatus.archived], "Task status must be either pending, in_progress, done or archived")
   .optional()
   .default(TaskStatus.pending),
+  attachments: taskAttachmentsSchema.optional().default([]),
 });

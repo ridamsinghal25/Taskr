@@ -1,3 +1,4 @@
+import type { TaskStatus, TaskType } from "@prisma/client";
 import type { Request, Response } from "express";
 import { TaskService } from "../services/task.services.js";
 import { ApiResponse } from "../lib/ApiResponse.js";
@@ -7,7 +8,12 @@ const taskService = new TaskService();
 
 export class TaskController {
   static async createTask(req: Request, res: Response) {
-    const { name, type, status } = req.body;
+    const { name, type, status, attachments } = req.body as {
+      name: string;
+      type: TaskType;
+      status: TaskStatus;
+      attachments?: { url: string; fileId: string }[];
+    };
     const { categoryId } = req.query as { categoryId: string };
 
     if (!name){ 
@@ -26,7 +32,13 @@ export class TaskController {
         throw new BadRequestException("categoryId is required");
     }
 
-    const task = await taskService.createTask(name, type, status, categoryId);
+    const task = await taskService.createTask(
+      name,
+      type,
+      status,
+      categoryId,
+      attachments,
+    );
 
     return res
     .status(201)
@@ -34,7 +46,12 @@ export class TaskController {
   }
 
   static async createTaskByCategoryName(req: Request, res: Response) {
-    const { name, type, status } = req.body;
+    const { name, type, status, attachments } = req.body as {
+      name: string;
+      type: TaskType;
+      status: TaskStatus;
+      attachments?: { url: string; fileId: string }[];
+    };
     const { categoryName } = req.params as { categoryName: string };
 
     if (!req.user || !req.user.id){ 
@@ -57,7 +74,14 @@ export class TaskController {
         throw new BadRequestException("Task status is required");
     }
 
-    const task = await taskService.createTaskByCategoryName(categoryName, name, type, status, req.user.id);
+    const task = await taskService.createTaskByCategoryName(
+      categoryName,
+      name,
+      type,
+      status,
+      req.user.id,
+      attachments,
+    );
 
     return res
     .status(201)
