@@ -11,6 +11,9 @@ const appConfig = () => ({
 
   FRONTEND_ORIGIN: getEnv("FRONTEND_ORIGIN", "localhost"),
   CHROME_ORIGIN: getEnv("CHROME_ORIGIN"),
+
+  IMAGEKIT_PRIVATE_KEY: getEnv("IMAGEKIT_PRIVATE_KEY", ""),
+  IMAGEKIT_PUBLIC_KEY: getEnv("IMAGEKIT_PUBLIC_KEY", ""),
 });
 
 export const config = appConfig();
