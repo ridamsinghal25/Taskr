@@ -1,3 +1,4 @@
+import { TaskStatus } from "@prisma/client";
 import prisma from "../db/db.js";
 import { categorySchema } from "../validation/category.js";
 import { extractMessagesFromFlatten } from "../lib/zodError.js";
@@ -115,28 +116,67 @@ export class CategoryService {
       throw new BadRequestException("User not found");
     }
 
-    return await prisma.category.findMany({
+    const categories = await prisma.category.findMany({
       where: {
         userId,
       },
     });
-  }
 
-  async getCategoriesById(categoryIds: string[]) {
-    const categories = await prisma.category.findMany({
-      where: {
-        id: { in: categoryIds },
-      },
-      select: {
-        name: true,
-      }
-    });
-
-    if (!categories.length) {
-      throw new BadRequestException(`${categories.length > 1 ? "Categories" : "Category"} not found`);
+    if (categories.length === 0) {
+      return [];
     }
 
-    return categories;
+    const categoryIds = categories.map((category) => category.id);
+
+    const tasks = await prisma.task.findMany({
+      where: {
+        categoryId: { in: categoryIds },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    const tasksByCategoryId = new Map<string, typeof tasks>();
+
+    for (const task of tasks) {
+      const categoryTasks = tasksByCategoryId.get(task.categoryId);
+
+      if (categoryTasks) {
+        categoryTasks.push(task);
+      } else {
+        tasksByCategoryId.set(task.categoryId, [task]);
+      }
+    }
+
+    return categories.map((category) => {
+      const categoryTasks = tasksByCategoryId.get(category.id) ?? [];
+
+      let totalDoneTasks = 0;
+      let totalNonArchivedTasks = 0;
+
+      for (const task of categoryTasks) {
+        if (task.status === TaskStatus.done) {
+          totalDoneTasks++;
+        }
+
+        if (task.status !== TaskStatus.archived) {
+          totalNonArchivedTasks++;
+        }
+      }
+
+      const completionPercentage =
+        totalNonArchivedTasks > 0
+          ? Math.round((totalDoneTasks / totalNonArchivedTasks) * 100)
+          : 0;
+
+      return {
+        ...category,
+        totalDoneTasks,
+        totalNonArchivedTasks,
+        completionPercentage,
+      };
+    });
   }
 
   async getCategoriesByName(categoryNames: string[], userId: string) {

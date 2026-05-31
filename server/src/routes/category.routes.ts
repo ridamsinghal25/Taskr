@@ -13,9 +13,6 @@ categoryRouter
     .get(asyncHandler(CategoryController.getCategories))
     .delete(asyncHandler(CategoryController.deleteCategories))
 
-categoryRouter.route("/bulk-get")
-    .post(asyncHandler(CategoryController.getCategoriesById));
-
 categoryRouter.route("/bulk-get-by-name")
     .post(asyncHandler(CategoryController.getCategoriesByName));
 
