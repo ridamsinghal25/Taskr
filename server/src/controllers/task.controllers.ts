@@ -172,6 +172,32 @@ export class TaskController {
     .json(new ApiResponse(200, result, "Tasks deleted successfully"));
   }
 
+  static async getRecentTasks(req: Request, res: Response) {
+    if (!req.user?.id) {
+      throw new BadRequestException("User not found");
+    }
+
+    const limitParam = req.query.limit as string | undefined;
+    const offsetParam = req.query.offset as string | undefined;
+
+    const limit = limitParam !== undefined ? Number(limitParam) : 100;
+    const offset = offsetParam !== undefined ? Number(offsetParam) : 0;
+
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw new BadRequestException("limit must be a positive integer");
+    }
+
+    if (!Number.isInteger(offset) || offset < 0) {
+      throw new BadRequestException("offset must be a non-negative integer");
+    }
+    
+    const tasks = await taskService.getRecentTasks(req.user.id, limit, offset);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, tasks, "Recent tasks fetched"));
+  }
+
   static async getTasksByCategoryId(req: Request, res: Response) {
     const { categoryId } = req.query as { categoryId: string };
 

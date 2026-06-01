@@ -12,6 +12,9 @@ taskRouter.route("/")
     .get(asyncHandler(TaskController.getTasksByCategoryId))
     .delete(asyncHandler(TaskController.deleteTasks))
 
+taskRouter.route("/recent")
+    .get(asyncHandler(TaskController.getRecentTasks))
+
 taskRouter.route("/:categoryName/create-task")
     .post(asyncHandler(TaskController.createTaskByCategoryName))
 
