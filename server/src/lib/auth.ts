@@ -18,6 +18,7 @@ export const auth = betterAuth({
       // Optional configuration
       expiresIn: "30m", // Device code expiration time
       interval: "5s", // Minimum polling interval
+      schema: {}
     }),
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
