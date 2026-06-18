@@ -538,7 +538,7 @@ export class TaskService {
     const month = now.getMonth();
     const date = now.getDate();
 
-    const dayRanges = [0, 1, 2, 3].map((daysAgo) => ({
+    const dayRanges = [0, 1, 2, 3, 4, 5, 6, 7].map((daysAgo) => ({
       updatedAt: {
         gte: new Date(year, month, date - daysAgo, 0, 0, 0, 0),
         lte: new Date(year, month, date - daysAgo, 23, 59, 59, 999),
