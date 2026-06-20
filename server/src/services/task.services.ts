@@ -532,23 +532,39 @@ export class TaskService {
     return await prisma.task.findMany({ where: { categoryId } });
   }
 
+  // async getRecentTasks(userId: string, limit = 100, offset = 0) {
+  //   const now = new Date();
+  //   const year = now.getFullYear();
+  //   const month = now.getMonth();
+  //   const date = now.getDate();
+
+  //   const dayRanges = [0, 1, 2, 3, 4, 5, 6, 7].map((daysAgo) => ({
+  //     updatedAt: {
+  //       gte: new Date(year, month, date - daysAgo, 0, 0, 0, 0),
+  //       lte: new Date(year, month, date - daysAgo, 23, 59, 59, 999),
+  //     },
+  //   }));
+
+  //   return await prisma.task.findMany({
+  //     where: {
+  //       status: { not: TaskStatus.archived },
+  //       OR: dayRanges,
+  //       category: {
+  //         userId,
+  //       },
+  //     },
+  //     orderBy: {
+  //       updatedAt: "desc",
+  //     },
+  //     take: limit,
+  //     skip: offset,
+  //   });
+  // }
+
   async getRecentTasks(userId: string, limit = 100, offset = 0) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const date = now.getDate();
-
-    const dayRanges = [0, 1, 2, 3, 4, 5, 6, 7].map((daysAgo) => ({
-      updatedAt: {
-        gte: new Date(year, month, date - daysAgo, 0, 0, 0, 0),
-        lte: new Date(year, month, date - daysAgo, 23, 59, 59, 999),
-      },
-    }));
-
     return await prisma.task.findMany({
       where: {
-        status: { not: TaskStatus.archived },
-        OR: dayRanges,
+        status: TaskStatus.pending,
         category: {
           userId,
         },
