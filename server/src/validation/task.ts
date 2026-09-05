@@ -15,16 +15,16 @@ export const taskSchema = zod.object({
     .string("Name is required")
     .trim()
     .min(4, "Task name must be at least 4 characters long")
-    .max(500, "Task name must be at most 500 characters long")
+    .max(5000, "Task name must be at most 5000 characters long")
     .optional()
     .default(""),
   type: zod
-  .enum([TaskType.critical, TaskType.normal], "Task type must be either critical or normal")
-  .optional()
-  .default(TaskType.normal),
+    .enum([TaskType.critical, TaskType.normal], "Task type must be either critical or normal")
+    .optional()
+    .default(TaskType.normal),
   status: zod
-  .enum([TaskStatus.pending, TaskStatus.in_progress, TaskStatus.done, TaskStatus.archived], "Task status must be either pending, in_progress, done or archived")
-  .optional()
-  .default(TaskStatus.pending),
+    .enum([TaskStatus.pending, TaskStatus.in_progress, TaskStatus.done, TaskStatus.archived], "Task status must be either pending, in_progress, done or archived")
+    .optional()
+    .default(TaskStatus.pending),
   attachments: taskAttachmentsSchema.optional().default([]),
 });
